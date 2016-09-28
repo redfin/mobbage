@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION=0.1
+VERSION=0.2
 
 import argparse
 import collections
@@ -18,35 +18,44 @@ import threading
 import time
 
 # Python version-specific module names
-is_py3 = sys.version[0] == '3'
-if is_py3:
+if sys.version[0] == '3':
     from http.cookiejar import MozillaCookieJar
+    from urllib.parse import parse_qs
     import queue 
 else:
     from cookielib import MozillaCookieJar
+    from urlparse import parse_qs
     import Queue as queue
 
 # Get command line arguments and print usage/help statement
 def get_args():
     
     url_file_help = '\n  '.join([
-        'Job File Format:\n',
+        'URL File Format:\n',
+        'The url file is a newline delimited list of URLs (and optionally ',
+        'methods and POST idata) compatible with the siege file format, e.g.:',
+        '  http://www.site1.com',
+        '  http://www.site1.com GET',
+        '  http://www.site2.org POST foo=bar&bin=baz',
+        '\nJob File Format:\n',
         'The job file is a JSON formatted array of objects, with each object',
         'representing a single URL to test.  Options that are honored in the',
         'job objects are:' ,
         '    url, method, agent, header, upload, insecure, nokeepalive,',
-        '    num, delay',
+        '    num, delay\n',
         'Options not specified in a job object will inherit values set on',
         'the command line, and default values otherwise. The "header" and',
         '"upload" should be specified as arrays.',
         'Example file contents:',
         '  [',
-        '      { "url": "http://www.google.com", "count": 100,',
-        '        "header": ["host:www.yahoo.com", "accept-language:en-us"]',
-        '      },',
+        '      { "url": "http://www.foo.com", "count": 100,',
+        '        "header": ["host:www.bar.com", "accept-language:en-us"] },',
+        '      { "url": "http://www.google.com/search?q=lmgtfy",',
+        '        "agent": "lulzBot/0.1", "delay": 50 },',
+        '      { "url": "http://www.bar.com", "method": "POST",',
+        '        "data": "field1=boo&field2=baz" },',
         '      { "url": "http://www.myhost.com", "count": 10,',
-        '        "upload": ["file1:/tmp/foo.txt", "file2:/tmp/bar.zip"]',
-        '      }',
+        '        "upload": ["file1:/tmp/foo.txt", "file2:/tmp/bar.zip"] }',
         '  ]',
     ])
 
@@ -60,9 +69,12 @@ def get_args():
     group1 = parser.add_argument_group("Request control")
     group1.add_argument("urls", metavar="URL", nargs="*",
         help="URL(s) to fetch")
-    group1.add_argument("-f", "--file", metavar="str", 
+    group1.add_argument("-f", "--jobfile", metavar="str", 
         type=argparse.FileType("rt"),
         help="Read job data from this file")
+    group1.add_argument("-F", "--urlfile", metavar="str", 
+        type=argparse.FileType("rt"),
+        help="Read url data from this file.  Mutually exclusive with -f")
     group1.add_argument("-m", "--method", metavar="str", default="GET",
         help="HTTP method to use.  Default is 'GET'")
     group1.add_argument("-a", "--agent", metavar="str", 
@@ -117,6 +129,8 @@ def get_args():
         help="Format results as CSV")
     group4.add_argument("-p", "--progress", action="store_true",
         help="Show progress bar")
+    group4.add_argument("-V", "--verbose", action="store_true",
+        help="Print verbose worker output")
 
     group5 = parser.add_argument_group("Reporting")
     group5.add_argument("-g", "--graphite", metavar="str",
@@ -133,13 +147,16 @@ def get_args():
     args = parser.parse_args()
 
     # Show our help text if we haven't defined any urls or an url file
-    if args.urls == [] and args.file is None:
+    if args.urls == [] and args.jobfile is None and args.urlfile is None:
         parser.print_help()
         sys.exit(1)
 
     # And also show it if we have specified both, because that's just silly
-    elif args.urls and args.file:
-        error("Positional urls and --file are mutually exclusive.", parser)
+    if args.urls and (args.jobfile or args.urlfile):
+        error("Positional urls and job/URL files are mutually exclusive.", 
+            parser)
+    if args.jobfile and args.urlfile:
+        error("Job/URL files are mutually exclusive.", parser)
 
     # Make sure more than one output flag hasn't been set
     if(args.json + args.csv + args.progress > 1):
@@ -217,12 +234,20 @@ class WorkerQueue():
         # Set our method (GET, POST, etc)
         if not "method" in job:
             job.method = args.method
+
         # Read in our job delay... 
         try:
             job.delay = (job.delay/1000.0
                 if 'delay' in job else args.delay/1000.0)
         except ValueError:
             raise Exception("Delay must be an integer")
+
+        # ... and set our query parameters
+        job.params = {}
+        job.orig_url = job.url
+        if "?" in job.url:
+            job.url, query_string = job.url.split("?", 1)
+            job.params = parse_qs(query_string)
 
         # ... and our authentication (if any)
         if "auth" in job:
@@ -278,7 +303,7 @@ class WorkerQueue():
         # the dict that the requests module requires
         header_list = []
 
-        # Coalesce headers from the command line and the url file, if any
+        # Coalesce headers from the command line and the job/url file, if any
         if "headers" in job:
             if not isinstance(job.headers, list):
                 raise Exception("Headers must be in list form")
@@ -461,6 +486,8 @@ class WorkerThread(threading.Thread):
                 resp = sess.request(
                     job.method,
                     job.url,
+                    params=job.params,
+                    data=job.data,
                     headers=job.headers,
                     files=upload_files,
                     auth=auth,
@@ -478,6 +505,7 @@ class WorkerThread(threading.Thread):
                 # content-length response header, since consuming the content
                 # is required for keepalives and we might as well do it here
                 self.result_queue.put(DotDict({
+                    'url':  job.orig_url,
                     'code': resp.status_code,
                     'time': elapsed,
                     'size': len(resp.content)
@@ -492,8 +520,12 @@ class WorkerThread(threading.Thread):
                 except:
                     err_code = 400
 
+                elapsed = time.clock() - start
                 self.result_queue.put(DotDict({
+                    'url': job.orig_url,
                     'code': err_code,
+                    'time': elapsed,
+                    'size': 0,
                     'error': e
                 }))
                         
@@ -567,9 +599,9 @@ def main():
 
     # Populate our work queue from our file, if we got that
     # particular runtime argument
-    if args.file:
+    if args.jobfile:
         try:
-            json_data = json.loads(args.file.read())
+            json_data = json.loads(args.jobfile.read())
         except ValueError as e:
             error("JSON Error: {}".format(e))
 
@@ -581,6 +613,16 @@ def main():
                 work_queue.put(data, args)
         except Exception as e:
             error("Data error: {}\n{}".format(e, str(data)))
+
+    # Also try reading files from a siege-style URL file
+    # formatted something like: <URL> [method] [query string]
+    elif args.urlfile:
+        for line in args.urlfile:
+            url_opts = line.rstrip().split(None, 2)
+            data = {} if len(url_opts) < 3 else parse_qs(url_opts[2])
+            method = "GET" if len(url_opts) < 2 else url_opts[1]
+            work_queue.put({"url": url_opts[0], "method": method, 
+                "data": data}, args)
 
     # Otherwise populate it using the URLs specified on the command-line
     else:
@@ -607,10 +649,11 @@ def main():
     num_errors   = 0
 
     # Various metrics to collect
-    min_time     = 0
+    inf          = float('+inf')
+    min_time     = inf
     max_time     = 0
     total_time   = 0
-    min_size     = 0
+    min_size     = inf
     max_size     = 0
     total_size   = 0
     result_codes = collections.defaultdict(int)
@@ -633,19 +676,27 @@ def main():
             num_requests += 1
             result_codes[result.code] += 1
 
+            # Print our verbose output if requested
+            if args.verbose:
+                print "Code: {}, Size: {}, Time: {:d}ms, URL: {}".format(
+                    result.code,
+                    bytes_to_human(result.size),
+                    int(result.time*1000),
+                    result.url)
+
             if result.error:
                 num_errors += 1
             else:
                 # Woo, successful result, compile some data about it
-                if not min_size or result.size < min_size:
+                if result.size < min_size:
                     min_size = result.size
-                if not max_size or result.size > max_size:
+                if result.size > max_size:
                     max_size = result.size
                 total_size += result.size
 
-                if not min_time or result.time < min_time:
+                if result.time < min_time:
                     min_time = result.time
-                if not max_time or result.time > max_time:
+                if result.time > max_time:
                     max_time = result.time
                 total_time += result.time
 
@@ -689,14 +740,18 @@ def main():
 
     # Do some post-process calculations
     num_success = num_requests - num_errors
-    min_time = int(min_time * 1000.0)
+    if min_time == inf: 
+        min_time = 0
+    if min_size == inf: 
+        min_size = 0
+    min_time = int(min_time * 1000.0) 
     max_time = int(max_time * 1000.0)
-    ms_running = int(time_running*1000.0)
+    ms_running = int(time_running * 1000.0)
     avg_time = int(total_time * 1000.0 / num_success) if num_success else 0
     avg_size = total_size / num_success if num_success else 0
     availability = num_success * 100.0 / num_requests
-    bps = total_size/time_running
-    concurrency = num_requests/time_running
+    bps = total_size / time_running
+    concurrency = num_requests / time_running
 
     # Print our results in the requested format, like CSV...
     if args.csv:
@@ -736,7 +791,7 @@ def main():
             "    Requests:          {}\n"
             "    Successes:         {}\n"
             "    Errors:            {}\n"
-            "    Availability       {:.2f}%%\n"
+            "    Availability       {:.2f}%\n"
             "    Minimum time:      {:d}ms\n"
             "    Average time:      {:d}ms\n"
             "    Maximum time:      {:d}ms\n"

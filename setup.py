@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='mobbage',
 
-    version='0.1',
+    version='0.2',
 
     description='A HTTP stress test and benchmark tool',
     long_description=long_description,
