@@ -33,56 +33,56 @@ Command-line options can be grouped into these categories:
 
 ### Request control:
 
-  URL                      URL(s) to fetch
-  -f str, --jobfile str    Read job data from this file
-  -F str, --urlfile str    Read url data from this file. Mutually exclusive
-                           with -f
-  -m str, --method str     HTTP method to use. Default is 'GET'
-  -a str, --agent str      Set User-Agent request header
-  -H str, --header str     Send request header in 'name:value' format. Specify
-                           more than once for multiple headers
-  -u str, --upload str     Upload a file via multipart/form-data POST. Must be
-                           formatted as 'form_var:file_path[:content_type]'.
-                           If content type isn't specified, a best guess will
-                           be made based on the filename. This option can be
-                           specified more than once. Forces method to be POST
-  -i, --insecure           Disable SSL certificate validation
-  -k, --nokeepalive        Disable keep-alive requests
-  -c str, --cookiejar str  Path to Unix/Netscape formatted cookie jar file.
-  -2, --http2              Use HTTP/2 standard (experimental).
+    URL                      URL(s) to fetch
+    -f str, --jobfile str    Read job data from this file
+    -F str, --urlfile str    Read url data from this file. Mutually exclusive
+                             with -f
+    -m str, --method str     HTTP method to use. Default is 'GET'
+    -a str, --agent str      Set User-Agent request header
+    -H str, --header str     Send request header in 'name:value' format. Specify
+                             more than once for multiple headers
+    -u str, --upload str     Upload a file via multipart/form-data POST. Must be
+                             formatted as 'form_var:file_path[:content_type]'.
+                             If content type isn't specified, a best guess will
+                             be made based on the filename. This option can be
+                             specified more than once. Forces method to be POST
+    -i, --insecure           Disable SSL certificate validation
+    -k, --nokeepalive        Disable keep-alive requests
+    -c str, --cookiejar str  Path to Unix/Netscape formatted cookie jar file.
+    -2, --http2              Use HTTP/2 standard (experimental).
 
 ### Authentication:
 
-  -A str, --auth str       Auth credentials in 'username:password' format
-  -T str, --authtype str   Authentication type to use: basic(default), digest
+    -A str, --auth str       Auth credentials in 'username:password' format
+    -T str, --authtype str   Authentication type to use: basic(default), digest
 
 ### Flow control:
 
-  -w N, --workers N        Use this many concurrent workers. Default is 1
-  -n N, --num N            Quit after exceeding this number of requests
-  -t N, --time N           Quit after running for this number of seconds
-  -b N, --bytes N          Quit after for this number of seconds
-  -e N, --errors N         Quit after encountering this many errors
-  -d N, --delay N          Pause N ms after each request. Default is 0
-  -r, --random             Fetch URLs in random order instead of sequentially
+    -w N, --workers N        Use this many concurrent workers. Default is 1
+    -n N, --num N            Quit after exceeding this number of requests
+    -t N, --time N           Quit after running for this number of seconds
+    -b N, --bytes N          Quit after for this number of seconds
+    -e N, --errors N         Quit after encountering this many errors
+    -d N, --delay N          Pause N ms after each request. Default is 0
+    -r, --random             Fetch URLs in random order instead of sequentially
 
 ### Output control (mutually exclusive):
 
-  -q, --quiet              Suppress all output
-  -j, --json               Format results as JSON
-  -s, --csv                Format results as CSV
-  -p, --progress           Show progress bar
-  -V, --verbose            Print verbose worker output
+    -q, --quiet              Suppress all output
+    -j, --json               Format results as JSON
+    -s, --csv                Format results as CSV
+    -p, --progress           Show progress bar
+    -V, --verbose            Print verbose worker output
 
 ### Reporting:
 
-  -g str, --graphite str   Graphite host to use, defined as 'server[:port]'
-  -P str, --prefix str     Prefix for graphite metrics. Default is 'mobbage'
+    -g str, --graphite str   Graphite host to use, defined as 'server[:port]'
+    -P str, --prefix str     Prefix for graphite metrics. Default is 'mobbage'
 
 ### Information:
 
-  -v, --version            Show version and quit
-  -h, --help               Show this help text
+    -v, --version            Show version and quit
+    -h, --help               Show this help text
 
 ## URL File Format:
 
