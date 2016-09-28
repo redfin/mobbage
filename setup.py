@@ -4,8 +4,16 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+here = path.abspath(path.dirname(__file__))
+
+if path.isfile('README.md'):
+    try:
+        import pypandoc
+        long_description = pypandoc.convert('README.md', 'rst')
+    except (IOError, ImportError):
+        long_description = open('README.md').read()
+else:
+    long_description=""
 
 setup(
     name='mobbage',
