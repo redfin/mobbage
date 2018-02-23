@@ -15,6 +15,7 @@ import socket
 import sys
 import threading
 import time
+import string
 
 VERSION=get_version(root="..", relative_to=__file__)
 
@@ -42,7 +43,7 @@ def get_args():
         'The job file is a JSON formatted array of objects, with each object',
         'representing a single URL to test.  Options that are honored in the',
         'job objects are:' ,
-        '    url, method, agent, header, upload, insecure, nokeepalive,',
+        '    url, method, agent, headers, upload, insecure, nokeepalive,',
         '    num, delay\n',
         'Options not specified in a job object will inherit values set on',
         'the command line, and default values otherwise. The "header" and',
@@ -50,7 +51,7 @@ def get_args():
         'Example file contents:',
         '  [',
         '      { "url": "http://www.foo.com", "count": 100,',
-        '        "header": ["host:www.bar.com", "accept-language:en-us"] },',
+        '        "headers": ["host:www.bar.com", "accept-language:en-us"] },',
         '      { "url": "http://www.google.com/search?q=lmgtfy",',
         '        "agent": "lulzBot/0.1", "delay": 50 },',
         '      { "url": "http://www.bar.com", "method": "POST",',
@@ -81,8 +82,8 @@ def get_args():
     group1.add_argument("-a", "--agent", metavar="str", 
         default="mobbage/{}".format(VERSION),
         help="Set User-Agent request header")
-    group1.add_argument("-H", "--header", metavar="str", action="append",
-        default=[], help="""Send request header in 'name:value' format. 
+    group1.add_argument("-H", "--headers", metavar="str", action="append",
+        default=[], help="""Send request headers in 'name:value' format. 
           Specify more than once for multiple headers""")
     group1.add_argument("-u", "--upload", metavar="str", action="append",
         default=[],  help="""Upload a file via multipart/form-data POST. 
@@ -308,15 +309,15 @@ class WorkerQueue():
         if "headers" in job:
             if not isinstance(job.headers, list):
                 raise Exception("Headers must be in list form")
-            header_list = job.headers + args.header
+            header_list = job.headers + args.headers
         else:
-            header_list = args.header
+            header_list = args.headers
 
         # Convert our list of colon-delimited k:v pairs to a dict
         header_dict = {}
         for kv in header_list:
             try:
-                key, val = map(strip, ':'.split(kv))
+                key, val = map(string.strip, kv.split(':'))
                 header_dict[key.lower()] = val 
             except:
                 raise Exception(
