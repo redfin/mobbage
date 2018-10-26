@@ -47,6 +47,8 @@ setup(
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     install_requires=['requests'],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
 
     entry_points={
         'console_scripts': [
