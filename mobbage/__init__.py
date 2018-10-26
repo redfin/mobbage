@@ -830,7 +830,7 @@ def main():
             if len(graphite_addr) == 1:
                 graphite_addr = (graphite_addr[0], 2003)
             else:
-                graphite_addr = (graphite_addr[0], int(graphite_addr[0]))
+                graphite_addr = (graphite_addr[0], int(graphite_addr[1]))
         except:
             error("Graphite address must be in 'server[:port]' format")
 
