@@ -555,11 +555,11 @@ def bytes_to_human(num, suffix='B'):
 def num_to_human(num):
     if num < 1000:
         return num
-    for unit in ['','K','M','B','T']:
+    for unit in ['','K','M','B']:
         if abs(num) < 1000.0:
             return "{:.2f}{}".format(num, unit)
         num /= 1000.0
-    return "{:.1d}{}{}".format(num, 'T', suffix)
+    return "{:.2f}{}".format(num, 'T')
 
 
 # Convert seconds to hh:mm:ss
