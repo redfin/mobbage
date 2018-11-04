@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-VERSION=0.2
-
 import argparse
 import collections
 import datetime
@@ -11,11 +9,14 @@ import os
 import random
 import requests
 import requests.auth
+from setuptools_scm import get_version
 import signal
 import socket
 import sys
 import threading
 import time
+
+VERSION=get_version(root="..", relative_to=__file__)
 
 # Python version-specific module names
 if sys.version[0] == '3':

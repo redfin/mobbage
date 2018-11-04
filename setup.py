@@ -18,8 +18,6 @@ else:
 setup(
     name='mobbage',
 
-    version='0.2',
-
     description='A HTTP stress test and benchmark tool',
     long_description=long_description,
     url='https://github.com/redfin/mobbage',
@@ -46,9 +44,10 @@ setup(
     keywords='http http/2 benchmark stress load test',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['requests'],
-    setup_requires=['pytest-runner'],
+    install_requires=['requests', 'setuptools_scm'],
+    setup_requires=['pytest-runner', 'setuptools_scm'],
     tests_require=['pytest'],
+    use_scm_version=True,
 
     entry_points={
         'console_scripts': [
