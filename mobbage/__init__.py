@@ -679,11 +679,12 @@ def main():
 
             # Print our verbose output if requested
             if args.verbose:
-                print "Code: {}, Size: {}, Time: {:d}ms, URL: {}".format(
+                print("Code: {}, Size: {}, Time: {:d}ms, URL: {}".format(
                     result.code,
                     bytes_to_human(result.size),
                     int(result.time*1000),
                     result.url)
+                )
 
             if result.error:
                 num_errors += 1
