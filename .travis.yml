@@ -1,6 +1,13 @@
 language: python
 python:
-  - "2.7"
+  - 2.7
+  - 3.6
+# This part is necessary due to travis-ci/travis-ci#9815.
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 
 script:
   - "python setup.py test"
