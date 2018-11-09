@@ -2,10 +2,6 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-here = path.abspath(path.dirname(__file__))
-
-here = path.abspath(path.dirname(__file__))
-
 if path.isfile('README.md'):
     try:
         import pypandoc
