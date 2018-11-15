@@ -39,7 +39,7 @@ Command-line options can be grouped into these categories:
                              with -f
     -m str, --method str     HTTP method to use. Default is 'GET'
     -a str, --agent str      Set User-Agent request header
-    -H str, --headers str    Send request headers in 'name:value' format. Specify
+    -H str, --header str     Send request header in 'name:value' format. Specify
                              more than once for multiple headers
     -u str, --upload str     Upload a file via multipart/form-data POST. Must be
                              formatted as 'form_var:file_path[:content_type]'.
@@ -106,7 +106,7 @@ in the job objects are:
  * delay
  * method
  * agent
- * headers
+ * header
  * upload 
  * insecure
  * nokeepalive
@@ -114,13 +114,13 @@ in the job objects are:
  * authtype
 
 Options not specified in a job object will inherit values set on the command 
-line, and default values otherwise.  The "headers" and "upload" should be 
+line, and default values otherwise.  The "header" and "upload" should be
 specified as JSON arrays of strings.
 
 ### Example file format:
     [
         { "url": "http://www.foo.com", "count": 100,
-          "headers": ["host:www.bar.com", "accept-language:en-us"] },
+          "header": ["host:www.bar.com", "accept-language:en-us"] },
         { "url": "http://www.google.com/search?q=lmgtfy",
           "agent": "lulzBot/0.1", "delay": 50 },
         { "url": "http://www.bar.com", "method": "POST",
