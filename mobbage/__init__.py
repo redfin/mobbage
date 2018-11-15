@@ -15,7 +15,6 @@ import socket
 import sys
 import threading
 import time
-import string
 
 VERSION=get_version(root="..", relative_to=__file__)
 
@@ -317,7 +316,7 @@ class WorkerQueue():
         header_dict = {}
         for kv in header_list:
             try:
-                key, val = map(string.strip, kv.split(':'))
+                key, val = [s.strip() for s in kv.split(':')]
                 header_dict[key.lower()] = val 
             except:
                 raise Exception(
