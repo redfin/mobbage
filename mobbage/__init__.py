@@ -113,7 +113,7 @@ def get_args():
     group3.add_argument("-t", "--time", metavar="N", type=int, default=0,
         help="Quit after running for this number of seconds")
     group3.add_argument("-b", "--bytes", metavar="N", type=int, default=0,
-        help="Quit after  for this number of seconds")
+        help="Quit after receiving this many bytes")
     group3.add_argument("-e", "--errors", metavar="N", type=int, default=0,
         help="Quit after encountering this many errors")
     group3.add_argument("-d", "--delay", metavar="N", type=int, default=0,
@@ -647,6 +647,7 @@ def main():
     time_start   = time.time()
     num_requests = 0
     time_running = 0
+    num_bytes    = 0
     num_errors   = 0
 
     # Various metrics to collect
@@ -667,6 +668,7 @@ def main():
 
     while ((not args.time or time_running < args.time)
             and (not args.num or num_requests < args.num)
+            and (not args.bytes or num_bytes < args.bytes)
             and (not args.errors or num_errors < args.errors)
             and running):
 
@@ -675,6 +677,7 @@ def main():
             # Pull a result off our result queue and process it
             result = result_queue.get(True, 1)
             num_requests += 1
+            num_bytes += result.size
             result_codes[result.code] += 1
 
             # Print our verbose output if requested
